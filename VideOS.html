@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VideOS</title>
+  <link rel="icon" href="logo.png" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #ffeb3b;
+      color: #000;
+    }
+    header {
+      background: #000;
+      color: #fff;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header img {
+      height: 32px;
+    }
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background: #222;
+      color: #fff;
+      padding: 10px 0;
+    }
+    nav button {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #content {
+      padding: 10px;
+    }
+    .video {
+      margin-bottom: 20px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .video iframe {
+      width: 100%;
+      height: 200px;
+      border: none;
+    }
+    .video-title {
+      padding: 10px;
+      font-weight: bold;
+    }
+    .search {
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+    }
+    .search input {
+      flex: 1;
+      padding: 8px;
+      font-size: 16px;
+    }
+    .search button {
+      padding: 8px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="VideOS Logo">
+    <strong>VideOS</strong>
+  </header>
+
+  <div class="search">
+    <input id="searchInput" placeholder="Поиск видео...">
+    <button onclick="searchVideos()">Найти</button>
+  </div>
+
+  <nav>
+    <button onclick="loadVideos('trending')">Тренды</button>
+    <button onclick="loadVideos('recently-added')">Недавние</button>
+    <button onclick="loadVideos('local')">Главная</button>
+    <button onclick="loadVideos('')">Рекомендации</button>
+  </nav>
+
+  <div id="content">
+    <p>Загрузка...</p>
+  </div>
+
+  <script>
+    async function loadVideos(category = 'trending') {
+      const content = document.getElementById('content');
+      content.innerHTML = '<p>Загрузка...</p>';
+
+      try {
+        const res = await fetch(`https://peertube.tv/api/v1/videos?sort=${category === 'recently-added' ? '-publishedAt' : category === 'local' ? 'relevance' : '-views'}`);
+        const data = await res.json();
+
+        content.innerHTML = '';
+        data.data.slice(0, 6).forEach(video => {
+          const videoEl = document.createElement('div');
+          videoEl.className = 'video';
+          videoEl.innerHTML = `
+            <iframe src="https://peertube.tv/videos/watch/${video.uuid}" allowfullscreen></iframe>
+            <div class="video-title">${video.name}</div>
+          `;
+          content.appendChild(videoEl);
+        });
+      } catch (e) {
+        content.innerHTML = '<p>Ошибка загрузки видео.</p>';
+      }
+    }
+
+    async function searchVideos() {
+      const query = document.getElementById('searchInput').value;
+      const content = document.getElementById('content');
+      if (!query) return;
+
+      content.innerHTML = '<p>Поиск...</p>';
+      try {
+        const res = await fetch(`https://peertube.tv/api/v1/search/videos?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        content.innerHTML = '';
+        data.data.slice(0, 6).forEach(video => {
+          const videoEl = document.createElement('div');
+          videoEl.className = 'video';
+          videoEl.innerHTML = `
+            <iframe src="https://peertube.tv/videos/watch/${video.uuid}" allowfullscreen></iframe>
+            <div class="video-title">${video.name}</div>
+          `;
+          content.appendChild(videoEl);
+        });
+      } catch (e) {
+        content.innerHTML = '<p>Ошибка поиска.</p>';
+      }
+    }
+
+    loadVideos();
+  </script>
+</body>
+</html>
